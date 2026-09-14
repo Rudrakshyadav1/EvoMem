@@ -1,0 +1,149 @@
+{
+  "memory_id": "mem_cpp_tree_longest_path_01",
+  "task": {
+    "description": "Fix syntax and logical bugs in a C++ template to compute the length of the longest path in a tree where no two adjacent nodes have the same character.",
+    "language": "C++",
+    "domain": "Tree Algorithms / Dynamic Programming on Trees"
+  },
+  "solution": {
+    "approach": "Utilized Depth-First Search (DFS) on the rooted tree. For each node, recursively evaluated valid child subtrees whose characters differed from the current node's character. Maintained the top two longest branch lengths among valid children, updated a global maximum path length using 1 + longest + second_longest, and returned 1 + longest to the caller.",
+    "key_ideas": [
+      "DFS recursion returning maximum single-branch path length to the parent node",
+      "Tracking top two longest valid child paths at each node to calculate combined path length through the node",
+      "Filtering adjacent child nodes with identical character values during DFS traversal"
+    ],
+    "files": [
+      "sol/Longest Path With Different Adjacent Characters.cpp",
+      "sol/first.cpp"
+    ]
+  },
+  "experience": {
+    "failures": [
+      "Attempted to view non-existent file /Users/rudrakshyadav/Desktop/EvoMem/phase-1/AGENTS.md resulting in a file editor error."
+    ],
+    "recovery": [
+      "Executed directory listing commands via terminal (ls -la ..) to inspect the workspace structure and locate existing files."
+    ],
+    "lessons": [
+      "Verify workspace file structure using list commands before attempting to open specific metadata or documentation files.",
+      "When solving tree path problems where paths can bend at a pivot node, keep track of the two largest child branch lengths during DFS to calculate node-pivoted paths while returning only the single best branch length."
+    ]
+  },
+  "status": "validated",
+  "validation": {
+    "status": "validated",
+    "validated_at": "2026-09-14T16:14:24.206789+00:00",
+    "language": {
+      "status": "verified",
+      "claim": "C++",
+      "evidence": [
+        "sol/Longest Path With Different Adjacent Characters.cpp has extension .cpp",
+        "Trajectory matches pattern: \\.cpp\\b",
+        "Trajectory matches pattern: \\bc\\+\\+\\b"
+      ]
+    },
+    "claims": {
+      "failures": [
+        {
+          "status": "verified",
+          "supporting_terms": [
+            "view",
+            "file",
+            "users",
+            "rudrakshyadav",
+            "desktop",
+            "evomem",
+            "phase-1",
+            "agents",
+            "file",
+            "editor",
+            "error"
+          ],
+          "claim": "Attempted to view non-existent file /Users/rudrakshyadav/Desktop/EvoMem/phase-1/AGENTS.md resulting in a file editor error."
+        }
+      ],
+      "recovery": [
+        {
+          "status": "verified",
+          "supporting_terms": [
+            "directory",
+            "listing",
+            "terminal",
+            "inspect",
+            "workspace",
+            "structure",
+            "existing",
+            "files"
+          ],
+          "claim": "Executed directory listing commands via terminal (ls -la ..) to inspect the workspace structure and locate existing files."
+        }
+      ],
+      "lessons": [
+        {
+          "status": "verified",
+          "supporting_terms": [
+            "verify",
+            "workspace",
+            "file",
+            "structure",
+            "list",
+            "open",
+            "specific",
+            "metadata",
+            "documentation",
+            "files"
+          ],
+          "claim": "Verify workspace file structure using list commands before attempting to open specific metadata or documentation files."
+        },
+        {
+          "status": "verified",
+          "supporting_terms": [
+            "when",
+            "tree",
+            "path",
+            "paths",
+            "node",
+            "keep",
+            "track",
+            "child",
+            "lengths",
+            "during",
+            "paths",
+            "only",
+            "single",
+            "length"
+          ],
+          "claim": "When solving tree path problems where paths can bend at a pivot node, keep track of the two largest child branch lengths during DFS to calculate node-pivoted paths while returning only the single best branch length."
+        }
+      ]
+    },
+    "files": [
+      {
+        "path": "sol/Longest Path With Different Adjacent Characters.cpp",
+        "exists": true,
+        "size_bytes": 3153,
+        "content_available": true,
+        "contains_code": true
+      }
+    ],
+    "execution": [
+      {
+        "file": "sol/Longest Path With Different Adjacent Characters.cpp",
+        "language": "C++",
+        "compile_success": true,
+        "compile_return_code": 0,
+        "compile_stdout": "",
+        "compile_stderr": "",
+        "execution_success": true,
+        "execution_return_code": 0,
+        "execution_stdout": "Test Case 1: 3 (Expected: 3)\nTest Case 2: 3 (Expected: 3)\nTest Case 3 (Single node): 1 (Expected: 1)\nTest Case 4 (All same chars): 1 (Expected: 1)\nTest Case 5 (Star graph): 3 (Expected: 3)\nAll tests passed successfully!\n",
+        "execution_stderr": ""
+      }
+    ],
+    "evidence_summary": {
+      "trajectory_events": 30,
+      "files_checked": 2,
+      "execution_checks": 1
+    }
+  }
+}
