@@ -1,0 +1,4 @@
+{
+  "retrieval": {"semantic_weight": 0.45, "lexical_weight": 0.35, "language_weight": 0.1, "validation_weight": 0.1, "top_k": 5},
+  "gate": {"minimum_score": 0.35, "allow_partially_validated": false}
+}
