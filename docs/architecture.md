@@ -6,4 +6,4 @@ All source evidence is preserved as event ID + field + excerpt. Distillation cre
 
 The trusted retrieval pool contains only `validated` memories. `partially_validated`, `rejected`, `stale`, and `quarantined` records remain available for audit but the default gate abstains. The gate records one of `accepted`, `rejected`, or `abstained` and can return no memory.
 
-Execution validation is explicitly skipped until an isolated runner is configured. `subprocess.run` is not used or described as a sandbox.
+Execution validation is explicitly skipped until an isolated runner is configured. `subprocess.run` is not used or described as a sandbox. Repository compatibility compares repository ID plus only tracked dependency/file fingerprints; an unrelated commit alone does not force staleness. It returns compatible, warning, incompatible, or unknown, and the gate abstains on a relevant drift warning.

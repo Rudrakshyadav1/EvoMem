@@ -2,7 +2,7 @@
 
 ### Validated and Retrieval-Gated Experience Memory for Coding Agents
 
-> **Current implementation status:** the original `phase-1/` remains the historical prototype. The new `src/evomem/` package is an offline, deterministic research-prototype core. It implements ordered ingestion, provenance-bearing candidate memories, conservative claim validation, canonical JSON storage, explainable hybrid baseline retrieval, and a retrieval gate that can abstain. It does not yet provide a real isolated executor, production embedding provider, direct OpenHands integration, or benchmark result.
+> **Current implementation status:** `src/evomem/` is the sole EvoMem implementation; the earlier Phase 1 prototype has been removed. This offline, deterministic research-prototype core implements ordered ingestion, provenance-bearing candidate memories, conservative claim validation, canonical JSON storage, rebuildable local indexing, explainable hybrid baseline retrieval, compatibility-aware gating, and abstention. It does not yet provide a real isolated executor, production embedding provider, direct OpenHands integration, or benchmark result.
 
 ## Quick start (no API key)
 
@@ -10,10 +10,12 @@
 python3 -m pip install -e .
 evomem pipeline --trajectory data/trajectories/fixture.json --store data/memories
 evomem retrieve --query "repair a C++ tree" --language C++ --store data/memories
+evomem index --store data/memories
+evomem health --store data/memories
 python3 -m unittest discover -s tests
 ```
 
-The first command creates a candidate from a fixture trajectory and independently validates every claim with available evidence. Validation does not execute commands: the report records `skipped` because an isolated executor is not configured. Retrieval results include component scores, lifecycle state, and a gate decision. See [the audit](docs/audit.md), [architecture](docs/architecture.md), and [evaluation protocol](docs/evaluation.md).
+The first command creates a candidate from a fixture trajectory and independently validates every claim with available evidence. Validation does not execute commands: the report records `skipped` because an isolated executor is not configured. Retrieval results include component scores, lifecycle state, compatibility checks, and a gate decision. See [the audit](docs/audit.md), [architecture](docs/architecture.md), [retrieval and gating](docs/retrieval_and_gating.md), and [evaluation protocol](docs/evaluation.md).
 
 EvoMem is a validated, retrieval-gated experience memory system for autonomous coding agents, built on top of [OpenHands](https://github.com/All-Hands-AI/OpenHands). Rather than blindly storing and replaying raw past trajectories, EvoMem distills completed tasks into structured, sandbox-verified experience records and retrieves them using semantic, error-signature, and code-structure signals.
 

@@ -9,6 +9,16 @@ description = "Validated, retrieval-gated experience memory for coding agents"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+agent = [
+  "openhands-sdk",
+  "openhands-tools",
+]
+dev = [
+  "python-dotenv",
+  "pytest>=8,<9",
+]
+
 [project.scripts]
 evomem = "evomem.cli:main"
 

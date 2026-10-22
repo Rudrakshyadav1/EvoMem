@@ -12,9 +12,9 @@ Extraction separates actions from observations and loses their original ordering
 
 Trajectory content is treated as trusted prompt material; local code is executed without isolation; file references may escape an intended repository snapshot; cloud keys are required at import and the legacy project has a local `.env`; and `validated` is used as a broad status despite only heuristic claim checks. Compilation and a few program outputs do not establish algorithmic correctness.
 
-## Migration plan
+## Migration plan (completed decision)
 
-1. Keep `phase-1` as a read-only legacy baseline.
+1. Remove `phase-1` after auditing it: its limited code and generated artifacts were not a dependable baseline.
 2. Add a standard-library core with strict dataclass validation, ordered normalized events, fact provenance, and deterministic distillation for fixtures.
 3. Make validation claim-level and conservative: unsupported claims remain unverified; local execution is skipped unless an explicitly configured isolated runner exists.
 4. Persist canonical memories separately from rebuildable indexes; add local lexical/semantic-baseline retrieval, compatibility checks, a gate, and abstention.

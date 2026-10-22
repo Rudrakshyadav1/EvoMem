@@ -1,0 +1,7 @@
+{
+  "tasks": [
+    {"task_id": "alpha-001", "repository": "example/alpha", "order": 1, "language": "Python"},
+    {"task_id": "alpha-002", "repository": "example/alpha", "order": 2, "language": "Python"},
+    {"task_id": "beta-001", "repository": "example/beta", "order": 1, "language": "C++"}
+  ]
+}
