@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 import shutil
 import subprocess
 from typing import Sequence
@@ -60,6 +61,19 @@ class DockerExecutor(IsolatedExecutor):
         except subprocess.TimeoutExpired as exc:
             return ExecutionResult("timeout", f"Docker command exceeded {timeout_seconds} seconds.", list(command), stdout=exc.stdout or "", stderr=exc.stderr or "")
         return ExecutionResult("completed" if completed.returncode == 0 else "failed", "Executed in constrained Docker container.", list(command), completed.returncode, completed.stdout, completed.stderr)
+
+
+class DockerWorkspaceExecutor(DockerExecutor):
+    """A writable-workspace Docker boundary for an agent's terminal tool.
+
+    Model calls remain outside this executor. The container has no network and
+    sees only the supplied disposable repository at ``/workspace``.
+    """
+    def docker_command(self, command: Sequence[str]) -> list[str]:
+        root = os.path.abspath(self.repository_root)
+        return ["docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+                "--pids-limit", str(self.pids_limit), "--memory", self.memory, "--cpus", self.cpus, "--tmpfs", "/tmp:rw,noexec,nosuid,size=512m",
+                "--mount", f"type=bind,src={root},dst=/workspace", "--workdir", "/workspace", self.image, *command]
 
 
 def execute_if_isolated(command: Sequence[str], executor: IsolatedExecutor | None, timeout_seconds: int = 30) -> ExecutionResult:

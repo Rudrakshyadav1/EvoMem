@@ -18,7 +18,7 @@ from .execution import DockerExecutor, execute_if_isolated
 from .providers import GeminiREST
 from .integration import memory_context
 from .openhands_adapter import health as openhands_health
-from .openhands_runner import execute_prepared, prepare_run
+from .openhands_runner import execute_prepared, execute_sandboxed, prepare_run
 
 
 def dump(value: object) -> None:
@@ -39,6 +39,7 @@ def main() -> None:
     agent_context = sub.add_parser("agent-context"); agent_context.add_argument("--task", required=True); agent_context.add_argument("--task-id"); agent_context.add_argument("--store", default="data/memories"); agent_context.add_argument("--language"); agent_context.add_argument("--context-json")
     sub.add_parser("openhands-health")
     oh_run = sub.add_parser("openhands-run"); oh_run.add_argument("--manifest", required=True); oh_run.add_argument("--task-id", required=True); oh_run.add_argument("--condition", required=True); oh_run.add_argument("--task", required=True); oh_run.add_argument("--repo", required=True); oh_run.add_argument("--memory-store", required=True); oh_run.add_argument("--output-dir", required=True); oh_run.add_argument("--model"); oh_run.add_argument("--attempts", type=int, default=1); oh_run.add_argument("--retry-delay", type=float, default=5.0); oh_run.add_argument("--execute", action="store_true")
+    oh_sandbox = sub.add_parser("openhands-sandbox-run"); oh_sandbox.add_argument("--manifest", required=True); oh_sandbox.add_argument("--task-id", required=True); oh_sandbox.add_argument("--condition", required=True); oh_sandbox.add_argument("--task", required=True); oh_sandbox.add_argument("--repo", required=True); oh_sandbox.add_argument("--memory-store", required=True); oh_sandbox.add_argument("--output-dir", required=True); oh_sandbox.add_argument("--image", required=True); oh_sandbox.add_argument("--model"); oh_sandbox.add_argument("--terminal-timeout", type=int, default=120); oh_sandbox.add_argument("--attempts", type=int, default=1); oh_sandbox.add_argument("--retry-delay", type=float, default=5.0); oh_sandbox.add_argument("--execute", action="store_true")
     context = sub.add_parser("context"); context.add_argument("--repo", required=True); context.add_argument("--file", action="append")
     execute = sub.add_parser("execute"); execute.add_argument("--repo", required=True); execute.add_argument("--image", required=True); execute.add_argument("--timeout", type=int, default=30); execute.add_argument("container_command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
@@ -74,6 +75,11 @@ def main() -> None:
         if not args.execute:
             dump({"status": "dry_run", "request_path": str(Path(args.output_dir) / "request.json"), "request": request}); return
         dump(execute_prepared(request, args.output_dir, model=args.model, attempts=args.attempts, retry_delay_seconds=args.retry_delay)); return
+    if args.command == "openhands-sandbox-run":
+        request = prepare_run(args.manifest, task_id=args.task_id, condition=args.condition, task_prompt=args.task, repository=args.repo, memory_store=args.memory_store, output_dir=args.output_dir)
+        if not args.execute:
+            dump({"status": "dry_run", "request_path": str(Path(args.output_dir) / "request.json"), "image": args.image, "execution_boundary": "docker-terminal", "request": request}); return
+        dump(execute_sandboxed(request, args.output_dir, image=args.image, model=args.model, terminal_timeout_seconds=args.terminal_timeout, attempts=args.attempts, retry_delay_seconds=args.retry_delay)); return
     if args.command == "context":
         dump(collect(args.repo, files=args.file)); return
     if args.command == "execute":

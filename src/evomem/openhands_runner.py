@@ -100,3 +100,90 @@ def execute_prepared(
                    "memory_ids": [item["memory_id"] for item in request["agent_context"]["accepted_memories"]], "gate_decisions": request["agent_context"]["decision_log"], "errors": errors}
     (out / "outcome.json").write_text(json.dumps(outcome, indent=2), encoding="utf-8")
     return outcome
+
+
+def execute_sandboxed(
+    request: dict[str, Any],
+    output_dir: str | Path,
+    *,
+    image: str,
+    model: str | None = None,
+    terminal_timeout_seconds: int = 120,
+    attempts: int = 1,
+    retry_delay_seconds: float = 5.0,
+) -> dict[str, Any]:
+    """Execute one run with Gemini on the host and terminal commands in Docker."""
+    if attempts < 1:
+        raise ValueError("attempts must be at least 1.")
+    status = health()
+    if not status.available:
+        raise RuntimeError(status.reason)
+    from .execution import DockerWorkspaceExecutor
+    available, reason = DockerWorkspaceExecutor.availability()
+    if not available:
+        raise RuntimeError(reason)
+    _load_project_environment()
+    import os
+    from openhands.sdk import Agent, Conversation, LLM
+    from openhands.sdk.tool import Tool
+    from openhands.tools.preset.gemini import get_gemini_condenser, register_gemini_tools
+    from openhands.tools.task_tracker import TaskTrackerTool
+    from openhands.tools.terminal import TerminalTool
+    from .sandbox_runner import DockerTerminalExecutor
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is required for OpenHands Gemini execution.")
+    selected_model = model or request["manifest_model"]
+    if not selected_model.startswith("gemini/"):
+        selected_model = "gemini/" + selected_model
+    register_gemini_tools(enable_browser=False)
+    out = Path(output_dir)
+    prompt = request["prompt"] + "\n\nSANDBOX: Use only the terminal tool. Every command runs in a no-network Docker container where /workspace is the supplied disposable repository."
+    errors: list[dict[str, str]] = []
+    outcome: dict[str, Any] | None = None
+    for attempt in range(1, attempts + 1):
+        llm = LLM(model=selected_model, api_key=api_key, temperature=0, seed=None)
+        agent = Agent(
+            llm=llm,
+            # Tool specs are persisted by OpenHands. Inject the non-serializable
+            # Docker executor only after Conversation has created that persisted state.
+            tools=[Tool(name=TerminalTool.name), Tool(name=TaskTrackerTool.name)],
+            system_prompt_kwargs={"cli_mode": True},
+            condenser=get_gemini_condenser(llm.model_copy(update={"usage_id": "condenser"})),
+        )
+        conversation = Conversation(agent=agent, workspace=request["repository_path"], persistence_dir=out / "conversation", max_iteration_per_run=int(request["budget"].get("max_steps", 50)))
+        # Conversation persists the serializable agent spec first, then normally
+        # initializes tools on its first step. Materialize that safe default now so
+        # the host executor can be replaced before the model receives any tool.
+        agent._initialize(conversation.state)
+        terminal = DockerTerminalExecutor(request["repository_path"], image, timeout_seconds=terminal_timeout_seconds)
+        runtime_tools = agent.tools_map
+        host_terminal = runtime_tools[TerminalTool.name]
+        if host_terminal.executor is not None:
+            host_terminal.executor.close()
+        runtime_tools[TerminalTool.name] = host_terminal.set_executor(terminal)
+        # `_tools` is OpenHands' runtime-only map; its content is not serialized
+        # into ConversationState, unlike the original Tool specs above.
+        object.__setattr__(agent, "_tools", runtime_tools)
+        conversation.send_message(prompt)
+        try:
+            conversation.run()
+            events = getattr(conversation.state, "events", [])
+            serializable = [event.model_dump(mode="json") if hasattr(event, "model_dump") else str(event) for event in events]
+            (out / "trajectory.json").write_text(json.dumps(serializable, indent=2, default=str), encoding="utf-8")
+            outcome = {"status": "completed", "attempt": attempt, "execution_boundary": "docker-terminal", "image": image, "event_count": len(serializable), "task_id": request["task_id"], "condition": request["condition"],
+                       "memory_ids": [item["memory_id"] for item in request["agent_context"]["accepted_memories"]], "gate_decisions": request["agent_context"]["decision_log"]}
+            break
+        except Exception as exc:
+            errors.append({"attempt": str(attempt), "type": type(exc).__name__, "message": str(exc)})
+        finally:
+            conversation.close()
+            terminal.close()
+        if attempt < attempts:
+            time.sleep(retry_delay_seconds)
+    if outcome is None:
+        outcome = {"status": "failed", "attempts": attempts, "execution_boundary": "docker-terminal", "image": image, "task_id": request["task_id"], "condition": request["condition"],
+                   "errors": errors, "memory_ids": [item["memory_id"] for item in request["agent_context"]["accepted_memories"]], "gate_decisions": request["agent_context"]["decision_log"]}
+    (out / "outcome.json").write_text(json.dumps(outcome, indent=2), encoding="utf-8")
+    return outcome

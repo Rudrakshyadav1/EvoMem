@@ -2,7 +2,7 @@
 
 ### Validated and Retrieval-Gated Experience Memory for Coding Agents
 
-> **Current implementation status:** `src/evomem/` is the sole EvoMem implementation; the earlier Phase 1 prototype has been removed. This offline, deterministic research-prototype core implements ordered ingestion, provenance-bearing candidate memories, conservative claim validation, canonical JSON storage, rebuildable local indexing, explainable hybrid baseline retrieval, compatibility-aware gating, and abstention. It does not yet provide a real isolated executor, production embedding provider, direct OpenHands integration, or benchmark result.
+> **Current implementation status:** `src/evomem/` is the sole EvoMem implementation; the earlier Phase 1 prototype has been removed. This research-prototype core implements ordered ingestion, provenance-bearing candidate memories, conservative claim validation, canonical JSON storage, rebuildable local indexing, explainable hybrid baseline retrieval, compatibility-aware gating, abstention, opt-in Gemini/OpenHands execution, and a Docker-confined agent-terminal boundary. It does not yet provide a SWE-bench result or a production benchmark-scale runner.
 
 ## Quick start (no API key)
 

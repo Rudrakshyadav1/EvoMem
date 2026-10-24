@@ -17,7 +17,7 @@ Persist one record per completed run with task ID, condition, supplied memory ID
 
 ## Agent integration boundary
 
-`evomem openhands-health` checks whether the optional OpenHands SDK can load. EvoMem prepares serializable, condition-specific requests for an external OpenHands runner; it does not yet launch OpenHands directly. This keeps evaluation planning testable without an agent runtime and avoids claiming integration when a local SDK/dependency installation is broken. The `no_memory` request forcibly strips all memories.
+`evomem openhands-health` checks whether the optional OpenHands SDK can load. EvoMem prepares serializable, condition-specific requests before opt-in execution, keeping evaluation planning testable without an agent runtime. The `no_memory` request forcibly strips all memories.
 
 OpenHands execution is now opt-in for one manifest run at a time. It writes `request.json`, `trajectory.json`, and `outcome.json` to the requested output directory. It performs a dry run unless `--execute` is supplied; execution may edit the specified repository.
 
@@ -32,3 +32,5 @@ evomem openhands-run --manifest artifacts/reports/run-manifest.json \
 ```
 
 `--attempts` controls whole-run retries after a provider failure (default: one attempt). Every terminal outcome, including a temporary provider failure, is saved in `outcome.json` so unavailable model calls are never counted as task failures or silently discarded.
+
+For a Docker-confined agent terminal, use `openhands-sandbox-run` instead. It runs model calls in the host process but gives the agent only a no-network Docker terminal. The `--repo` checkout must be disposable and `--image` must be the task's own dependency image. Its `--attempts` and `--retry-delay` options create fresh whole-run retries for temporary model-provider failures.

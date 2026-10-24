@@ -12,7 +12,7 @@ from evomem.validation import validate
 from evomem.versioning import compare_context
 from evomem.indexing import load, rebuild
 from evomem.config import Settings
-from evomem.execution import DockerExecutor
+from evomem.execution import DockerExecutor, DockerWorkspaceExecutor
 from evomem.repository_context import collect
 from evomem.cli import main
 from evomem.distillation import distill_with_provider
@@ -103,6 +103,14 @@ class PipelineTests(unittest.TestCase):
         command = DockerExecutor("/safe/repo", "python:3.12-slim").docker_command(["python", "-V"])
         for required in ("--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges"):
             self.assertIn(required, command)
+
+    def test_agent_workspace_docker_command_is_networkless_and_writable(self):
+        command = DockerWorkspaceExecutor("/safe/repo", "task-image").docker_command(["/bin/sh", "-lc", "pwd"])
+        self.assertIn("none", command)
+        self.assertIn("--read-only", command)
+        mount = command[command.index("--mount") + 1]
+        self.assertNotIn("readonly", mount)
+        self.assertIn("dst=/workspace", mount)
 
     def test_docker_availability_requires_daemon_access(self):
         from unittest.mock import Mock
