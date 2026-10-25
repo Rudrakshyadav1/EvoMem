@@ -15,6 +15,28 @@ evomem health --store data/memories
 python3 -m unittest discover -s tests
 ```
 
+## Standard issue workflow
+
+Use `issue-run` as the integration entry point for every new issue. It performs
+repository fingerprinting, hybrid similarity retrieval from the curated global
+memory store, validation/compatibility gating, abstention, and writes an
+auditable `agent-context.json` and `request.json`. It is safe by default: omit
+`--execute` to review the exact context before starting an agent.
+
+```bash
+evomem issue-run \
+  --task "Describe the issue here" \
+  --repo /path/to/disposable-repository-checkout \
+  --memory-store data/memories \
+  --language Python \
+  --output-dir artifacts/issue-runs/example
+```
+
+To execute the prepared request, add `--execute`, an explicit Gemini `--model`,
+and a task dependency `--image`. Agent terminal commands then run only inside
+the Docker sandbox. Review `agent-context.json` to see the accepted memories
+and every rejected or abstained retrieval before sharing results.
+
 The first command creates a candidate from a fixture trajectory and independently validates every claim with available evidence. Validation does not execute commands: the report records `skipped` because an isolated executor is not configured. Retrieval results include component scores, lifecycle state, compatibility checks, and a gate decision. See [the audit](docs/audit.md), [architecture](docs/architecture.md), [retrieval and gating](docs/retrieval_and_gating.md), and [evaluation protocol](docs/evaluation.md).
 
 EvoMem is a validated, retrieval-gated experience memory system for autonomous coding agents, built on top of [OpenHands](https://github.com/All-Hands-AI/OpenHands). Rather than blindly storing and replaying raw past trajectories, EvoMem distills completed tasks into structured, sandbox-verified experience records and retrieves them using semantic, error-signature, and code-structure signals.

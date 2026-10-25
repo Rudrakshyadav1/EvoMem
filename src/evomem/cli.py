@@ -18,7 +18,7 @@ from .execution import DockerExecutor, execute_if_isolated
 from .providers import GeminiREST
 from .integration import memory_context
 from .openhands_adapter import health as openhands_health
-from .openhands_runner import execute_prepared, execute_sandboxed, prepare_run
+from .openhands_runner import execute_prepared, execute_sandboxed, prepare_issue_run, prepare_run
 
 
 def dump(value: object) -> None:
@@ -37,6 +37,20 @@ def main() -> None:
     health = sub.add_parser("health"); health.add_argument("--store", default="data/memories")
     evaluation = sub.add_parser("evaluate"); evaluation.add_argument("--output", default="artifacts/reports/evaluation.json"); evaluation.add_argument("--dataset"); evaluation.add_argument("--results"); evaluation.add_argument("--manifest"); evaluation.add_argument("--agent", default="external-adapter"); evaluation.add_argument("--agent-model", default="unspecified"); evaluation.add_argument("--seed", type=int); evaluation.add_argument("--max-steps", type=int, default=50)
     agent_context = sub.add_parser("agent-context"); agent_context.add_argument("--task", required=True); agent_context.add_argument("--task-id"); agent_context.add_argument("--store", default="data/memories"); agent_context.add_argument("--language"); agent_context.add_argument("--context-json")
+    issue_run = sub.add_parser("issue-run", help="Prepare or execute the standard retrieval-gated issue workflow")
+    issue_run.add_argument("--task", required=True, help="Issue description or task prompt")
+    issue_run.add_argument("--repo", required=True, help="Disposable repository checkout for the agent")
+    issue_run.add_argument("--memory-store", default="data/memories", help="Curated global memory store")
+    issue_run.add_argument("--output-dir", required=True, help="Directory for the audited request, context, and outcome")
+    issue_run.add_argument("--language")
+    issue_run.add_argument("--task-id")
+    issue_run.add_argument("--max-steps", type=int, default=50)
+    issue_run.add_argument("--image", help="Task dependency image; required with --execute")
+    issue_run.add_argument("--model", help="Gemini model; required with --execute")
+    issue_run.add_argument("--terminal-timeout", type=int, default=120)
+    issue_run.add_argument("--attempts", type=int, default=1)
+    issue_run.add_argument("--retry-delay", type=float, default=5.0)
+    issue_run.add_argument("--execute", action="store_true", help="Run OpenHands after preparing gated context")
     sub.add_parser("openhands-health")
     oh_run = sub.add_parser("openhands-run"); oh_run.add_argument("--manifest", required=True); oh_run.add_argument("--task-id", required=True); oh_run.add_argument("--condition", required=True); oh_run.add_argument("--task", required=True); oh_run.add_argument("--repo", required=True); oh_run.add_argument("--memory-store", required=True); oh_run.add_argument("--output-dir", required=True); oh_run.add_argument("--model"); oh_run.add_argument("--attempts", type=int, default=1); oh_run.add_argument("--retry-delay", type=float, default=5.0); oh_run.add_argument("--execute", action="store_true")
     oh_sandbox = sub.add_parser("openhands-sandbox-run"); oh_sandbox.add_argument("--manifest", required=True); oh_sandbox.add_argument("--task-id", required=True); oh_sandbox.add_argument("--condition", required=True); oh_sandbox.add_argument("--task", required=True); oh_sandbox.add_argument("--repo", required=True); oh_sandbox.add_argument("--memory-store", required=True); oh_sandbox.add_argument("--output-dir", required=True); oh_sandbox.add_argument("--image", required=True); oh_sandbox.add_argument("--model"); oh_sandbox.add_argument("--terminal-timeout", type=int, default=120); oh_sandbox.add_argument("--attempts", type=int, default=1); oh_sandbox.add_argument("--retry-delay", type=float, default=5.0); oh_sandbox.add_argument("--execute", action="store_true")
@@ -68,6 +82,17 @@ def main() -> None:
     if args.command == "agent-context":
         current_context = json.loads(Path(args.context_json).read_text(encoding="utf-8")) if args.context_json else None
         dump(memory_context(args.task, args.store, args.language, task_id=args.task_id, current_context=current_context)); return
+    if args.command == "issue-run":
+        request = prepare_issue_run(args.task, repository=args.repo, memory_store=args.memory_store, output_dir=args.output_dir,
+                                    language=args.language, task_id=args.task_id, max_steps=args.max_steps, model=args.model)
+        if not args.execute:
+            dump({"status": "prepared", "request_path": str(Path(args.output_dir) / "request.json"),
+                  "context_path": str(Path(args.output_dir) / "agent-context.json"), "request": request}); return
+        if not args.image or not args.model:
+            parser.error("issue-run --execute requires --image and --model.")
+        dump(execute_sandboxed(request, args.output_dir, image=args.image, model=args.model,
+                               terminal_timeout_seconds=args.terminal_timeout, attempts=args.attempts,
+                               retry_delay_seconds=args.retry_delay)); return
     if args.command == "openhands-health":
         dump(openhands_health().__dict__); return
     if args.command == "openhands-run":

@@ -4,6 +4,14 @@ Run `evomem health` before an experiment. The local pipeline needs no API key an
 
 Use `evomem context --repo /path/to/repo` to collect a read-only identity, commit, and hashes for dependency manifests. It stores no file contents. Add `--file relative/path` to fingerprint a task-relevant source file.
 
+For normal integration, use `evomem issue-run` rather than manually combining
+`context`, `retrieve`, and `agent-context`. It fingerprints the target checkout,
+retrieves from the supplied curated global store, applies the validated hybrid
+gate with compatibility checks, and saves `agent-context.json` plus
+`request.json` before any agent execution. Without `--execute` it is a
+reviewable dry run. With `--execute`, `--image`, and `--model`, it sends only
+accepted memories to the Docker-confined OpenHands terminal runner.
+
 `evomem execute --repo /path/to/repo --image IMAGE -- COMMAND` invokes Docker only when Docker exists. It uses no network, a read-only root filesystem and repository mount, a `no-new-privileges` policy, all capabilities dropped, CPU/memory/PID limits, and a temporary writable `/tmp`. Build output must target `/tmp`; failing closed is intentional. Never put secrets in the image, command, repository, or output.
 
 The executor module is an interface for a genuine container or VM integration. Until one is supplied, execution validation returns `skipped`; EvoMem never falls back to running LLM/trajectory commands through local `subprocess`.

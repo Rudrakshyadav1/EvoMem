@@ -24,6 +24,7 @@ from evomem.evaluation_runner import EvaluationRecord, load_and_validate_records
 from evomem.integration import memory_context
 from evomem.openhands_adapter import build_request
 from evomem.integration import condition_memory_context
+from evomem.openhands_runner import prepare_issue_run
 
 
 def fixture() -> Path:
@@ -181,6 +182,25 @@ class PipelineTests(unittest.TestCase):
             context = condition_memory_context("no_memory", "anything", directory)
         self.assertEqual(context["accepted_memories"], [])
         self.assertTrue(context["abstained"])
+
+    def test_issue_run_applies_repository_aware_retrieval_and_writes_audit_files(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            repository = root / "repo"; repository.mkdir()
+            (repository / "pyproject.toml").write_text("[project]\nname='demo'\n")
+            store = root / "global-store"
+            memory = validate(deterministic_distill(normalize(fixture())))
+            memory.context = collect(repository)
+            MemoryRepository(store).save(memory)
+            output = root / "run"
+            request = prepare_issue_run("Fix a C++ tree path implementation", repository=repository,
+                                        memory_store=store, output_dir=output, language="C++", max_steps=7)
+            self.assertEqual(request["condition"], "validated_hybrid_gated")
+            self.assertEqual(request["budget"], {"max_steps": 7})
+            self.assertEqual(len(request["agent_context"]["accepted_memories"]), 1)
+            self.assertTrue((output / "agent-context.json").is_file())
+            self.assertTrue((output / "request.json").is_file())
 
     def test_dotenv_loader_never_overrides_exported_values(self):
         before = os.environ.get("GEMINI_API_KEY")
