@@ -2,6 +2,10 @@
 
 ### Validated and Retrieval-Gated Experience Memory for Coding Agents
 
+New developers should begin with [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md).
+It documents the standard issue workflow, architecture/file ownership,
+guardrails, completed work, and the remaining roadmap.
+
 > **Current implementation status:** `src/evomem/` is the sole EvoMem implementation; the earlier Phase 1 prototype has been removed. This research-prototype core implements ordered ingestion, provenance-bearing candidate memories, conservative claim validation, canonical JSON storage, rebuildable local indexing, explainable hybrid baseline retrieval, compatibility-aware gating, abstention, opt-in Gemini/OpenHands execution, and a Docker-confined agent-terminal boundary. It does not yet provide a SWE-bench result or a production benchmark-scale runner.
 
 ## Quick start (no API key)
